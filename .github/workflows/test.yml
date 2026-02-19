@@ -9,6 +9,7 @@ on:
 
 env:
   FOUNDRY_VERSION: 1.6.0-nightly
+  FOUNDRY_FALLBACK_REF: d933f2e375faf2edad05a90e4f8338b71b128e8b
   NARGO_VERSION: 1.0.0-beta.18
   BB_VERSION: 3.0.0-nightly.20260102
 
@@ -24,8 +25,14 @@ jobs:
           persist-credentials: false
           submodules: recursive
 
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Install Foundry (retry)
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           export FOUNDRY_DIR="$HOME/.foundry"
@@ -34,9 +41,11 @@ jobs:
           curl -L https://foundry.paradigm.xyz | bash
           export PATH="$FOUNDRY_BIN_DIR:$PATH"
           echo "$FOUNDRY_BIN_DIR" >> "$GITHUB_PATH"
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
           test -x "$FOUNDRY_BIN_DIR/foundryup"
 
+          install_ok=0
           for attempt in 1 2 3 4 5; do
             echo "Foundry install attempt $attempt"
             rm -f "$FOUNDRY_BIN_DIR/forge" "$FOUNDRY_BIN_DIR/cast" "$FOUNDRY_BIN_DIR/anvil" "$FOUNDRY_BIN_DIR/chisel"
@@ -44,17 +53,28 @@ jobs:
             if "$FOUNDRY_BIN_DIR/foundryup" --install "$FOUNDRY_VERSION"; then
               if "$FOUNDRY_BIN_DIR/forge" --version >/dev/null 2>&1; then
                 echo "Foundry install successful"
+                install_ok=1
                 break
               fi
             fi
 
-            if [ "$attempt" -eq 5 ]; then
-              echo "Foundry installation failed after 5 attempts"
-              exit 1
-            fi
-
             sleep $((attempt * 5))
           done
+
+          if [ "$install_ok" -eq 0 ]; then
+            echo "Foundry binary download failed repeatedly; building from source ref $FOUNDRY_FALLBACK_REF"
+            rm -rf /tmp/foundry
+            git clone https://github.com/foundry-rs/foundry /tmp/foundry
+            cd /tmp/foundry
+            git checkout "$FOUNDRY_FALLBACK_REF"
+            cargo build --release --locked --bins
+            install -m 0755 target/release/forge "$HOME/.cargo/bin/forge"
+            install -m 0755 target/release/cast "$HOME/.cargo/bin/cast"
+            install -m 0755 target/release/anvil "$HOME/.cargo/bin/anvil"
+            install -m 0755 target/release/chisel "$HOME/.cargo/bin/chisel"
+            command -v forge
+            forge --version
+          fi
 
       - name: Install Noir
         run: |
