@@ -24,32 +24,10 @@ jobs:
           persist-credentials: false
           submodules: recursive
 
-      - name: Install Foundry (retry)
-        shell: bash
-        run: |
-          set -euo pipefail
-          export FOUNDRY_DIR="$HOME/.foundry"
-          export FOUNDRY_BIN_DIR="$FOUNDRY_DIR/bin"
-          export FOUNDRY_DISABLE_AUTO_UPDATE=1
-
-          curl -L https://foundry.paradigm.xyz | bash
-          export PATH="$FOUNDRY_BIN_DIR:$PATH"
-          echo "$FOUNDRY_BIN_DIR" >> "$GITHUB_PATH"
-
-          for attempt in 1 2 3; do
-            echo "Foundry install attempt $attempt"
-            if "$FOUNDRY_BIN_DIR/foundryup" --install "$FOUNDRY_VERSION" && "$FOUNDRY_BIN_DIR/forge" --version >/dev/null 2>&1; then
-              echo "Foundry install successful"
-              break
-            fi
-
-            if [ "$attempt" -eq 3 ]; then
-              echo "Foundry installation failed after 3 attempts"
-              exit 1
-            fi
-
-            sleep $((attempt * 5))
-          done
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly-2026-01-14
 
       - name: Install Noir
         run: |
