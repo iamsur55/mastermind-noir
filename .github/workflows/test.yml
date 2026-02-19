@@ -48,9 +48,20 @@ jobs:
           install_ok=0
           for attempt in 1 2 3 4 5; do
             echo "Foundry install attempt $attempt"
-            rm -f "$FOUNDRY_BIN_DIR/forge" "$FOUNDRY_BIN_DIR/cast" "$FOUNDRY_BIN_DIR/anvil" "$FOUNDRY_BIN_DIR/chisel"
+            rm -f "$FOUNDRY_BIN_DIR/forge" \
+              "$FOUNDRY_BIN_DIR/cast" \
+              "$FOUNDRY_BIN_DIR/anvil" \
+              "$FOUNDRY_BIN_DIR/chisel"
 
-            if "$$FOUNDRY_BIN_DIR/foundryup" --install --commit "$FOUNDRY_FALLBACK_REF"; then
+            if "$FOUNDRY_BIN_DIR/foundryup" --install --commit "$FOUNDRY_FALLBACK_REF"; then
+
+              # Check if we downloaded HTML instead of binary
+              if ! file "$FOUNDRY_BIN_DIR/forge" | grep -q 'ELF'; then
+                echo "Corrupt forge download (likely CDN HTML). Retrying..."
+                sleep $((attempt * 5))
+                continue
+              fi
+
               if "$FOUNDRY_BIN_DIR/forge" --version >/dev/null 2>&1; then
                 echo "Foundry install successful"
                 install_ok=1
