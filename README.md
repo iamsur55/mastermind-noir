@@ -64,7 +64,7 @@ This project uses Foundry. It is assumed that the user has access to `foundry`. 
 
 ```bash
 curl -L https://foundry.paradigm.xyz | bash
-foundryup --install 1.6.0-nightly
+foundryup --install 1.5.1-stable
 ```
 
 If `foundryup` does not work, source your `.bashrc` / `.zshrc`
@@ -152,9 +152,9 @@ npm run tool:export-eth-inputs
 
 ## CI Integration
 
-GitHub Actions runs the `check` job from `.github/workflows/test.yml` with pinned tool versions:
+GitHub Actions runs the `check` job from `.github/workflows/test.yml` with the following tool versions:
 
-- Foundry `1.6.0-nightly`
+- Foundry `1.5.1-stable`
 - Nargo `1.0.0-beta.18`
 - Barretenberg `3.0.0-nightly.20260102`
 
