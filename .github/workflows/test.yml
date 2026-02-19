@@ -53,7 +53,7 @@ jobs:
               "$FOUNDRY_BIN_DIR/anvil" \
               "$FOUNDRY_BIN_DIR/chisel"
 
-            if "$FOUNDRY_BIN_DIR/foundryup" --install --commit "$FOUNDRY_FALLBACK_REF"; then
+            if "$FOUNDRY_BIN_DIR/foundryup" --commit "$FOUNDRY_FALLBACK_REF"; then
 
               # Check if we downloaded HTML instead of binary
               if ! file "$FOUNDRY_BIN_DIR/forge" | grep -q 'ELF'; then
