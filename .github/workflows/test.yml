@@ -24,10 +24,31 @@ jobs:
           persist-credentials: false
           submodules: recursive
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: ${{ env.FOUNDRY_VERSION }}
+      - name: Install Foundry (retry)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L https://foundry.paradigm.xyz | bash
+          echo "$HOME/.foundry/bin" >> "$GITHUB_PATH"
+
+          for attempt in 1 2 3 4 5; do
+            echo "Foundry install attempt $attempt"
+            rm -f "$HOME/.foundry/bin/forge" "$HOME/.foundry/bin/cast" "$HOME/.foundry/bin/anvil" "$HOME/.foundry/bin/chisel"
+
+            if "$HOME/.foundry/bin/foundryup" --install "$FOUNDRY_VERSION"; then
+              if "$HOME/.foundry/bin/forge" --version >/dev/null 2>&1; then
+                echo "Foundry install successful"
+                break
+              fi
+            fi
+
+            if [ "$attempt" -eq 5 ]; then
+              echo "Foundry installation failed after 5 attempts"
+              exit 1
+            fi
+
+            sleep $((attempt * 5))
+          done
 
       - name: Install Noir
         run: |
